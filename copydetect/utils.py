@@ -28,8 +28,10 @@ def filter_code(code, filename, language=None):
     try:
         if language is not None:
             lexer = lexers.get_lexer_by_name(language)
-        else:
+        elif filename is not None:
             lexer = lexers.get_lexer_for_filename(filename)
+        else:
+            lexer = lexers.guess_lexer(code)
         tokens = lexer.get_tokens(code)
     except pygments.util.ClassNotFound:
         logging.warning(f"{filename} not tokenized: unknown file extension")
