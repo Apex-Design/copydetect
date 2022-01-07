@@ -9,3 +9,4 @@ copydetect.egg-info/
 docs/_build
 
 .cache
+venv

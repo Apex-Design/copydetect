@@ -61,24 +61,35 @@ class CodeFingerprint:
         If set, will force the tokenizer to use the provided language
         rather than guessing from the file extension.
     """
-    def __init__(self, file, k, win_size, boilerplate=[], filter=True,
-                 language=None):
-        with open(file) as code_fp:
-            code = code_fp.read()
-        if filter:
-            filtered_code, offsets = filter_code(code, file, language)
-        else:
-            filtered_code, offsets = code, np.array([])
-        hashes, idx = get_document_fingerprints(filtered_code, k, win_size,
-                                                boilerplate)
+    def __init__(self, k, win_size, file=None, code=None, boilerplate=[], filter=True, language=None):
+        try:
+            # Get the str of the code if file given
+            if file is not None:
+                # NOTE: errors='ignore' will ignore char that are not in utf8 so will lose some text
+                with open(file, errors='ignore') as code_fp:
+                    code = code_fp.read()
+            elif code is not None:
+                code = code
+            else:
+                raise Exception("Code was not provided.")
+            if filter:
+                filtered_code, offsets = filter_code(code, file, language)
+            else:
+                filtered_code, offsets = code, np.array([])
+            
+            hashes, idx = get_document_fingerprints(
+                filtered_code, k, win_size, boilerplate
+            )
 
-        self.filename = file
-        self.raw_code = code
-        self.filtered_code = filtered_code
-        self.offsets = offsets
-        self.hashes = hashes
-        self.hash_idx = idx
-        self.k = k
+            self.filename = file
+            self.raw_code = code
+            self.filtered_code = filtered_code
+            self.offsets = offsets
+            self.hashes = hashes
+            self.hash_idx = idx
+            self.k = k
+        except Exception as e:
+            logging.error(f"Failed to create CodeFingerprint because: {e}")
 
 def compare_files(file1_data, file2_data):
     """Computes the overlap between two CodeFingerprint objects
@@ -371,7 +382,7 @@ class CopyDetector:
             except UnicodeDecodeError:
                 logging.warning(f"Skipping {file}: file not ASCII text")
                 continue
-            fingerprint = CodeFingerprint(file, self.noise_t, 1,
+            fingerprint = CodeFingerprint(self.noise_t, 1, file=file,
                                           filter=not self.disable_filtering,
                                           language=self.force_language)
             boilerplate_hashes.extend(fingerprint.hashes)
@@ -385,15 +396,18 @@ class CopyDetector:
         for code_f in tqdm(file_list, bar_format= '   {l_bar}{bar}{r_bar}',
                 disable=self.silent):
             try:
-                file_data[code_f] = CodeFingerprint(
-                    code_f, self.noise_t, self.window_size,
-                    boilerplate_hashes, not self.disable_filtering,
-                    self.force_language)
-
+                cf = CodeFingerprint(
+                    self.noise_t, self.window_size, file=code_f,
+                    boilerplate=boilerplate_hashes, 
+                    filter=not self.disable_filtering, language=self.force_language
+                )
+                file_data[code_f] = cf
             except UnicodeDecodeError:
                 logging.warning(f"Skipping {code_f}: file not ASCII text")
                 continue
-
+            except Exception as e:
+                logging.error(f"Failed to preprocess code because: {e}")
+                continue
         return file_data
 
     def _comparison_loop(self):
