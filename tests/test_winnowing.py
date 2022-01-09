@@ -8,22 +8,49 @@ except (ModuleNotFoundError, ImportError):
     # issues with the C extension are just ignored for now because
     # versions uploaded to pypi do not use the c extension
     import warnings
-    warnings.warn(ImportWarning("Failed to import c extension. "
-                                "Falling back to python implementation."))
+
+    warnings.warn(
+        ImportWarning(
+            "Failed to import c extension. "
+            "Falling back to python implementation."
+        )
+    )
     from copydetect.pywinnow import _winnow
 import numpy as np
 import pytest
 
-class TestWinnowOutput():
+
+class TestWinnowOutput:
     """Ensure that winnowing generates the correct output for several
     selections of window_size using an example list. Also checks the
     behavior of winnowing for an empty input list and a window size
     larger than the input list
     """
+
     @pytest.fixture(autouse=True)
     def _testcase_variables(self):
-        test_list = [-15, -6, -8, 9, 6, -2, -2, 0, -16, -12,
-                      2, -12, -14, 18, -14, 18, 0, 5, 3, -19]
+        test_list = [
+            -15,
+            -6,
+            -8,
+            9,
+            6,
+            -2,
+            -2,
+            0,
+            -16,
+            -12,
+            2,
+            -12,
+            -14,
+            18,
+            -14,
+            18,
+            0,
+            5,
+            3,
+            -19,
+        ]
         self.test_arr = np.array(test_list)
 
     def test_winnow_empty(self):
@@ -51,20 +78,27 @@ class TestWinnowOutput():
         out_25 = _winnow(self.test_arr, 25)
         assert np.array_equal(out_25, winnow_25)
 
-class TestWinnowDensity():
+
+class TestWinnowDensity:
     """Ensure that the output density from several random winnowing
     runs falls within a sane range. The bounds are VERY generous.
     """
+
     def test_winnow_density(self):
         in_range = True
         for win_size in range(2, 20):
-            expected_density = 2/(win_size + 1)*10000
-            rand_hashes = np.random.randint(-9223372036854775808,
-                                             9223372036854775807, 10000,
-                                             dtype=np.int64)
+            expected_density = 2 / (win_size + 1) * 10000
+            rand_hashes = np.random.randint(
+                -9223372036854775808,
+                9223372036854775807,
+                10000,
+                dtype=np.int64,
+            )
             density = len(_winnow(rand_hashes, win_size))
 
-            if not (density > expected_density - 200 and
-                    density < expected_density + 200):
+            if not (
+                density > expected_density - 200
+                and density < expected_density + 200
+            ):
                 in_range = False
         assert in_range
