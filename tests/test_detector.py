@@ -30,20 +30,20 @@ class TestTwoFileDetection:
         detector.run()
 
         assert np.array_equal(
-            np.array([[-1, 1137 / 2052], [1137 / 1257, -1]]),
+            np.array([[-1, 1138 / 2058], [1138 / 1258, -1]]),
             detector.similarity_matrix,
         )
         assert np.array_equal(
-            np.array([[-1, 1137], [1137, -1]]), detector.token_overlap_matrix
+            np.array([[-1, 1138], [1138, -1]]), detector.token_overlap_matrix
         )
 
         html_out = detector.generate_html_report(output_mode="return")
-
+        logging.error(html_out)
         # verify highlighting code isn't being escaped
         test_str1 = "data[2] = [</span>0<span class='highlight-red'>, 6, 1]"
         test_str2 = "data[2] = [</span>3<span class='highlight-green'>, 6, 1]"
         # verify input code is being escaped
-        test_str3 = "print(&#34;Incorrect num&#34;"
+        test_str3 = "&#34;Incorrect num&#34;"
         assert test_str1 in html_out
         assert test_str2 in html_out
         assert test_str3 in html_out
@@ -55,11 +55,11 @@ class TestTwoFileDetection:
         detector.run()
 
         assert np.array_equal(
-            np.array([[-1, 1137 / 2052], [1137 / 1257, -1]]),
+            np.array([[-1, 1138 / 2058], [1138 / 1258, -1]]),
             detector.similarity_matrix,
         )
         assert np.array_equal(
-            np.array([[-1, 1137], [1137, -1]]), detector.token_overlap_matrix
+            np.array([[-1, 1138], [1138, -1]]), detector.token_overlap_matrix
         )
 
     def test_compare_saving(self, tmpdir):
@@ -138,9 +138,9 @@ class TestTwoFileAPIDetection:
         )
         token_overlap, similarities, slices = compare_files(fp1, fp2)
 
-        assert token_overlap == 1137
-        assert similarities[0] == 1137 / 2052
-        assert similarities[1] == 1137 / 1257
+        assert token_overlap == 1138
+        assert similarities[0] == 1138 / 2058
+        assert similarities[1] == 1138 / 1258
 
     def test_code_str(self):
         file1 = TESTS_DIR + "/sample_py/code/sample1.py"
@@ -156,10 +156,9 @@ class TestTwoFileAPIDetection:
 
         code1, _ = utils.highlight_overlap(fp1.raw_code, slices[0], ">>", "<<")
         code2, _ = utils.highlight_overlap(fp2.raw_code, slices[1], ">>", "<<")
-        logging.error()
-        assert token_overlap == 1137
-        assert similarities[0] == 1137 / 2052
-        assert similarities[1] == 1137 / 1257
+        assert token_overlap == 1138
+        assert similarities[0] == 1138 / 2058
+        assert similarities[1] == 1138 / 1258
 
     def test_compare_boilerplate(self):
         bp_fingerprint = CodeFingerprint(
