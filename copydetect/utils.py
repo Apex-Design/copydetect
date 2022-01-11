@@ -174,46 +174,53 @@ def highlight_overlap(
     an integer, everything not within that many lines of highlighted
     code will be replaced with "..."
     """
-    hl_percent = np.sum(slices[1] - slices[0]) / len(doc)
+    try:
+        hl_percent = np.sum(slices[1] - slices[0]) / len(doc)
 
-    new_doc = ""
-    current_idx = 0
-    for slice_idx in range(slices.shape[1]):
-        start_idx = slices[0, slice_idx]
-        end_idx = slices[1, slice_idx]
+        new_doc = ""
+        current_idx = 0
+        for slice_idx in range(slices.shape[1]):
+            start_idx = slices[0, slice_idx]
+            end_idx = slices[1, slice_idx]
+
+            if escape_html:
+                pre_highlight = str(escape(doc[current_idx:start_idx]))
+                highlighted = (
+                    left_hl + str(escape(doc[start_idx:end_idx])) + right_hl
+                )
+            else:
+                pre_highlight = doc[current_idx:start_idx]
+                highlighted = left_hl + doc[start_idx:end_idx] + right_hl
+
+            if truncate >= 0:
+                lines = pre_highlight.split("\n")
+                if slice_idx != 0 and len(lines) > truncate * 2:
+                    pre_highlight = (
+                        "\n".join(lines[: truncate + 1])
+                        + "\n\n...\n\n"
+                        + "\n".join(lines[-truncate - 1 :])
+                    )
+                elif len(lines) > truncate:
+                    pre_highlight = "\n".join(lines[-truncate - 1 :])
+
+            new_doc += pre_highlight + highlighted
+            current_idx = end_idx
 
         if escape_html:
-            pre_highlight = str(escape(doc[current_idx:start_idx]))
-            highlighted = (
-                left_hl + str(escape(doc[start_idx:end_idx])) + right_hl
-            )
+            post_highlight = str(escape(doc[current_idx:]))
         else:
-            pre_highlight = doc[current_idx:start_idx]
-            highlighted = left_hl + doc[start_idx:end_idx] + right_hl
+            post_highlight = doc[current_idx:]
 
         if truncate >= 0:
-            lines = pre_highlight.split("\n")
-            if slice_idx != 0 and len(lines) > truncate * 2:
-                pre_highlight = (
-                    "\n".join(lines[: truncate + 1])
-                    + "\n\n...\n\n"
-                    + "\n".join(lines[-truncate - 1 :])
-                )
-            elif len(lines) > truncate:
-                pre_highlight = "\n".join(lines[-truncate - 1 :])
+            lines = post_highlight.split("\n")
+            if len(lines) > truncate:
+                post_highlight = "\n".join(lines[:truncate])
+        new_doc += post_highlight
 
-        new_doc += pre_highlight + highlighted
-        current_idx = end_idx
-
-    if escape_html:
-        post_highlight = str(escape(doc[current_idx:]))
-    else:
-        post_highlight = doc[current_idx:]
-
-    if truncate >= 0:
-        lines = post_highlight.split("\n")
-        if len(lines) > truncate:
-            post_highlight = "\n".join(lines[:truncate])
-    new_doc += post_highlight
-
-    return new_doc, hl_percent
+        return new_doc, hl_percent
+    except Exception as e:
+        logging.error(f"Extra info: len(doc) = {len(doc)}, slices = {slices}")
+        logging.error(
+            f"Failed to highlight because: {e}\nReturning original doc with 100% highlighted."
+        )
+        return doc, 1
