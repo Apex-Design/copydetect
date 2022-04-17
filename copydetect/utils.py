@@ -37,7 +37,6 @@ def filter_code(code, filename, language=None):
             lexer = lexers.guess_lexer(code)
         tokens = lexer.get_tokens(code)
     except pygments.util.ClassNotFound:
-        logging.warning(f"{filename} not tokenized: unknown file extension")
         return code, np.array([])
 
     if lexer == pygments.lexers.TextLexer:
